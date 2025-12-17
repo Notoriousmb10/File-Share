@@ -7,7 +7,10 @@ export interface IFile extends Document {
   fileSize: number;
   uploadedAt: Date;
   s3Key: string;
-  sharedWith: mongoose.Schema.Types.ObjectId[];
+  sharedWith: {
+    userId: mongoose.Schema.Types.ObjectId;
+    expiresAt: Date | null;
+  }[];
 }
 
 const FileSchema: Schema = new Schema({
@@ -21,7 +24,12 @@ const FileSchema: Schema = new Schema({
   fileSize: { type: Number, required: true },
   uploadedAt: { type: Date, default: Date.now },
   s3Key: { type: String, required: true, unique: true },
-  sharedWith: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  sharedWith: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      expiresAt: { type: Date, default: null },
+    },
+  ],
 });
 
 export const FileModel = mongoose.model<IFile>("File", FileSchema);
