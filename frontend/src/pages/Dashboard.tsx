@@ -142,13 +142,15 @@ const Dashboard: React.FC = () => {
                     >
                       <FiEye />
                     </button>
-                    <button
-                      onClick={() => handleShare(file)}
-                      className="text-text-muted hover:text-green-600 bg-transparent text-lg p-2 rounded-full hover:bg-green-50 transition-all"
-                      title="Share"
-                    >
-                      <FiShare2 />
-                    </button>
+                    {file.isOwner && (
+                      <button
+                        onClick={() => handleShare(file)}
+                        className="text-text-muted hover:text-green-600 bg-transparent text-lg p-2 rounded-full hover:bg-green-50 transition-all"
+                        title="Share"
+                      >
+                        <FiShare2 />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

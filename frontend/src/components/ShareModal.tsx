@@ -229,7 +229,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           <button
             type="submit"
             disabled={loading || selectedUsers.length === 0}
-            className="w-full bg-primary hover:bg-primary-dark disabled:bg-indigo-300 text-white font-medium py-2 rounded-lg transition-colors"
+            className="w-full bg-gray-100 cursor-pointer disabled:cursor-not-allowed text-black hover:bg-gray-200 disabled:bg-indigo-300 font-medium py-2 rounded-lg transition-colors"
           >
             {loading ? "Sharing..." : "Share Access"}
           </button>
