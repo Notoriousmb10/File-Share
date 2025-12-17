@@ -1,3 +1,4 @@
+import loginLogModel from "../models/login-log.model";
 import UserModel, { IUser } from "../models/user.model";
 import jwt from "jsonwebtoken";
 
@@ -12,10 +13,22 @@ export const register = async (data: IUser) => {
     console.log(data, "sadas");
     const user = await UserModel.findOne({ email: data.email });
     if (user) {
+      await loginLogModel.create({
+        email: data.email,
+        action: "REGISTER",
+        status: "FAILURE",
+      });
       throw new Error("User already exists");
     }
     const newUser = await UserModel.create(data);
     const token = generateToken(newUser._id.toString());
+
+    await loginLogModel.create({
+      email: data.email,
+      action: "REGISTER",
+      status: "SUCCESS",
+    });
+
     return {
       message: "User registered successfully",
       data: newUser,
@@ -23,6 +36,15 @@ export const register = async (data: IUser) => {
       status: 200,
     };
   } catch (error) {
+    if (error instanceof Error && error.message !== "User already exists") {
+      if (data.email) {
+        await loginLogModel.create({
+          email: data.email,
+          action: "REGISTER",
+          status: "FAILURE",
+        });
+      }
+    }
     throw error;
   }
 };
@@ -31,15 +53,31 @@ export const login = async (data: Partial<IUser>) => {
   try {
     const user = await UserModel.findOne({ email: data.email });
     if (!user) {
+      await loginLogModel.create({
+        email: data.email,
+        action: "LOGIN",
+        status: "FAILURE",
+      });
       throw new Error("Invalid email or password");
     }
 
     const isMatch = await user.comparePassword(data.password!);
     if (!isMatch) {
+      await loginLogModel.create({
+        email: data.email,
+        action: "LOGIN",
+        status: "FAILURE",
+      });
       throw new Error("Invalid email or password");
     }
 
     const token = generateToken(user._id.toString());
+
+    await loginLogModel.create({
+      email: data.email,
+      action: "LOGIN",
+      status: "SUCCESS",
+    });
 
     return {
       message: "Login successful",
@@ -48,6 +86,18 @@ export const login = async (data: Partial<IUser>) => {
       status: 200,
     };
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message !== "Invalid email or password"
+    ) {
+      if (data.email) {
+        await loginLogModel.create({
+          email: data.email,
+          action: "LOGIN",
+          status: "FAILURE",
+        });
+      }
+    }
     throw error;
   }
 };
