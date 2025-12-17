@@ -16,6 +16,14 @@ export const upload = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    const filesToCheck =
+      (req.files as Express.Multer.File[]) || (req.file ? [req.file] : []); // made sure this exist, or else aws team will come at home
+    for (const file of filesToCheck) {
+      if (file.size > 1024 * 1024 * 10) {
+        return res.status(400).json({ message: "File size too large" });
+      }
+    }
+
     const userId = req.user!.id;
     const files = (req.files as Express.Multer.File[]) || [req.file];
     const uploadPromises = files.map((file) =>

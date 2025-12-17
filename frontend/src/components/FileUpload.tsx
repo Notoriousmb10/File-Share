@@ -10,9 +10,11 @@ const FileUpload: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
+    setError(null);
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -23,16 +25,31 @@ const FileUpload: React.FC = () => {
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
+    setError(null);
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      for (const file of e.dataTransfer.files) {
+        if (file.size > 1024 * 1024 * 10) {
+          setError("File size too large");
+          setTimeout(() => setError(null), 3000);
+          return;
+        }
+      }
       setFilesToUpload(Array.from(e.dataTransfer.files));
     }
   }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      for (const file of e.target.files) {
+        if (file.size > 1024 * 1024 * 10) {
+          setError("File size too large");
+          setTimeout(() => setError(null), 3000);
+          return;
+        }
+      }
       setFilesToUpload(Array.from(e.target.files));
     }
   };
@@ -96,6 +113,7 @@ const FileUpload: React.FC = () => {
             onChange={handleFileSelect}
           />
           <p className="text-sm text-text-muted">Supports multiple files</p>
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
       </div>
 
