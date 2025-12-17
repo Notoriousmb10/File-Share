@@ -40,7 +40,7 @@ The backend handles API requests, authentication, and file operations.
     AWS_BUCKET_NAME=your_s3_bucket_name
 
     # Frontend URL for generating links
-    FRONTEND_URL=http://localhost:5173
+    REACT_APP_URL=http://localhost:5173
     ```
 
 4.  Start the backend server:
