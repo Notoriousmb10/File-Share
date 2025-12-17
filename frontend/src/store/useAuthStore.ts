@@ -30,6 +30,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  isAuth: () => {
+    const token = localStorage.getItem("token");
+    return !!token;
+  },
+
   login: async (credentials) => {
     set({ isLoading: true, error: null });
     try {
