@@ -43,7 +43,8 @@ export const getUsers = async (
   next: NextFunction
 ) => {
   try {
-    const users = await authService.getAllUsers();
+    const userId = (req as any).user.id;
+    const users = await authService.getAllUsers(userId);
     return res.status(200).json(users);
   } catch (error) {
     next(error);
