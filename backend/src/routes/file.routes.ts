@@ -14,3 +14,13 @@ const upload = multer({
 router.use(authenticate as any);
 
 router.post("/upload", upload.array("files"), fileController.upload);
+
+router.get("/", fileController.getFiles);
+
+router.post("/:fileId/share-users", fileController.shareWithUsers);
+
+router.post("/:fileId/share-link", fileController.createShareLink);
+
+router.get("/:fileId/view", fileController.viewFileAuthenticated);
+
+export default router;
