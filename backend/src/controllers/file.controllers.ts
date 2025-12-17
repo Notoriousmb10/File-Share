@@ -44,14 +44,14 @@ export const getFiles = async (req: AuthRequest, res: Response) => {
 export const shareWithUsers = async (req: AuthRequest, res: Response) => {
   try {
     const { fileId } = req.params;
-    const { users } = req.body; // Array of user IDs
+    const { users, expiresAt } = req.body;
     const userId = req.user!.id;
 
     if (!users || !Array.isArray(users)) {
       return res.status(400).json({ message: "Invalid users list" });
     }
 
-    await fileService.shareFileWithUsers(fileId, userId, users);
+    await fileService.shareFileWithUsers(fileId, userId, users, expiresAt);
     return res.status(200).json({ message: "File shared successfully" });
   } catch (error) {
     return res.status(400).json({
@@ -63,9 +63,14 @@ export const shareWithUsers = async (req: AuthRequest, res: Response) => {
 export const createShareLink = async (req: AuthRequest, res: Response) => {
   try {
     const { fileId } = req.params;
+    const { expiresInHours } = req.body;
     const userId = req.user!.id;
 
-    const shareId = await fileService.generateShareLink(fileId, userId);
+    const shareId = await fileService.generateShareLink(
+      fileId,
+      userId,
+      expiresInHours
+    );
 
     const shareUrl = `${
       process.env.FRONTEND_URL || "http://localhost:5173"

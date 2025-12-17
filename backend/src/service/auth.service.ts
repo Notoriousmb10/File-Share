@@ -9,14 +9,13 @@ const generateToken = (id: string) => {
 
 export const register = async (data: IUser) => {
   try {
+    console.log(data, "sadas");
     const user = await UserModel.findOne({ email: data.email });
     if (user) {
       throw new Error("User already exists");
     }
-
     const newUser = await UserModel.create(data);
     const token = generateToken(newUser._id.toString());
-
     return {
       message: "User registered successfully",
       data: newUser,
@@ -48,6 +47,17 @@ export const login = async (data: Partial<IUser>) => {
       token,
       status: 200,
     };
+  } catch (error) {
+    throw error;
+  }
+};
+export const getAllUsers = async (currentUserId: string) => {
+  try {
+    const users = await UserModel.find(
+      { _id: { $ne: currentUserId } },
+      "name email _id"
+    );
+    return users;
   } catch (error) {
     throw error;
   }
