@@ -1,0 +1,148 @@
+import React, { useCallback, useState } from "react";
+import { useFileStore } from "../store/useFileStore";
+import { FiUploadCloud } from "react-icons/fi";
+import { apiClient } from "../api/client";
+
+//The fileupload was majorly written by chatgpt :)
+const FileUpload: React.FC = () => {
+  const { fetchFiles } = useFileStore();
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+  const [progress, setProgress] = useState(0);
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragging(true);
+    } else if (e.type === "dragleave") {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFilesToUpload(Array.from(e.dataTransfer.files));
+    }
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFilesToUpload(Array.from(e.target.files));
+    }
+  };
+
+  const handleUpload = async () => {
+    if (filesToUpload.length === 0) return;
+    setUploading(true);
+    setProgress(0);
+
+    const formData = new FormData();
+    filesToUpload.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    try {
+      await apiClient.post("/files/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const total = progressEvent.total || 1;
+          const current = progressEvent.loaded;
+          setProgress(Math.round((current / total) * 100));
+        },
+      });
+
+      setFilesToUpload([]);
+      fetchFiles();
+    } catch (error) {
+      console.error("Upload failed", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          isDragging
+            ? "border-primary bg-primary/5"
+            : "border-gray-300 hover:border-primary"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <FiUploadCloud className="w-10 h-10 text-primary" />
+          <p className="text-text-main font-medium">
+            Drag & Drop files here or
+            <label className="mx-1 text-primary hover:text-primary-dark cursor-pointer font-semibold">
+              Browse
+              <input
+                type="file"
+                className="hidden"
+                multiple
+                onChange={handleFileSelect}
+              />
+            </label>
+          </p>
+          <p className="text-sm text-text-muted">Supports multiple files</p>
+        </div>
+      </div>
+
+      {filesToUpload.length > 0 && (
+        <div className="mt-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="font-medium text-text-main">
+              Selected Files ({filesToUpload.length})
+            </span>
+            <button
+              onClick={() => setFilesToUpload([])}
+              className="text-red-500 text-sm hover:underline"
+            >
+              Clear
+            </button>
+          </div>
+          <ul className="space-y-2 max-h-40 overflow-y-auto">
+            {filesToUpload.map((file, idx) => (
+              <li
+                key={idx}
+                className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded text-sm text-text-muted"
+              >
+                <span className="truncate max-w-xs">{file.name}</span>
+                <span className="text-xs">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="pt-2">
+            {uploading ? (
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div
+                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            ) : (
+              <button
+                onClick={handleUpload}
+                className="w-full bg-primary hover:bg-primary-dark text-white py-2 rounded-lg font-medium transition-colors"
+              >
+                Upload Files
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FileUpload;
