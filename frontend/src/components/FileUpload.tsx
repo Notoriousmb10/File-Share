@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import { useFileStore } from "../store/useFileStore";
 import { FiUploadCloud } from "react-icons/fi";
 import { apiClient } from "../api/client";
@@ -10,6 +10,7 @@ const FileUpload: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -68,7 +69,7 @@ const FileUpload: React.FC = () => {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
           isDragging
             ? "border-primary bg-primary/5"
             : "border-gray-300 hover:border-primary"
@@ -77,21 +78,23 @@ const FileUpload: React.FC = () => {
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
       >
         <div className="flex flex-col items-center justify-center space-y-3">
           <FiUploadCloud className="w-10 h-10 text-primary" />
           <p className="text-text-main font-medium">
             Drag & Drop files here or
-            <label className="mx-1 text-primary hover:text-primary-dark cursor-pointer font-semibold">
+            <span className="mx-1 text-primary hover:text-primary-dark font-semibold">
               Browse
-              <input
-                type="file"
-                className="hidden"
-                multiple
-                onChange={handleFileSelect}
-              />
-            </label>
+            </span>
           </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            multiple
+            onChange={handleFileSelect}
+          />
           <p className="text-sm text-text-muted">Supports multiple files</p>
         </div>
       </div>
@@ -133,7 +136,7 @@ const FileUpload: React.FC = () => {
             ) : (
               <button
                 onClick={handleUpload}
-                className="w-full bg-primary hover:bg-primary-dark text-white py-2 rounded-lg font-medium transition-colors"
+                className="w-full bg-gray-200 max-w-max-content cursor-pointer hover:bg-gray-300 hover:bg-primary-dark text-black py-2 rounded-lg font-medium transition-colors"
               >
                 Upload Files
               </button>

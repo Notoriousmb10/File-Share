@@ -103,14 +103,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
     setMessage(null);
     setShareLink("");
     try {
-      const res = await apiClient.post<{ link: string; shareId: string }>(
+      const res = await apiClient.post<{ shareUrl: string; shareId: string }>(
         `/files/${fileId}/share-link`,
         { expiresInHours: linkExpiresIn }
       );
 
-      const link =
-        res.data.link ||
-        `${window.location.origin}/view-file/${res.data.shareId}`;
+      const link = res.data.shareUrl;
       setShareLink(link);
     } catch (error) {
       setMessage({ type: "error", text: "Failed to generate link." });
