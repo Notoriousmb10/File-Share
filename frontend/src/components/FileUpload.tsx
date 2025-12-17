@@ -127,16 +127,25 @@ const FileUpload: React.FC = () => {
           </ul>
           <div className="pt-2">
             {uploading ? (
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-primary h-2.5 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                ></div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-text-muted">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span>Uploading to S3...</span>
+                  </div>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
               </div>
             ) : (
               <button
                 onClick={handleUpload}
-                className="w-full bg-gray-200 max-w-max-content cursor-pointer hover:bg-gray-300 hover:bg-primary-dark text-black py-2 rounded-lg font-medium transition-colors"
+                className="w-full bg-primary hover:bg-primary-dark text-white py-2 rounded-lg font-medium transition-colors shadow-sm shadow-primary/20"
               >
                 Upload Files
               </button>

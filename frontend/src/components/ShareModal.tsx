@@ -217,7 +217,11 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
                 value={userExpiresAt}
                 onChange={(e) => setUserExpiresAt(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
+                min={new Date(
+                  Date.now() - new Date().getTimezoneOffset() * 60000
+                )
+                  .toISOString()
+                  .slice(0, 16)}
               />
             </div>
           </div>
