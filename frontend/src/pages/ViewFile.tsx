@@ -2,15 +2,27 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { FiFile } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/useAuthStore";
 
 const ViewFile: React.FC = () => {
   const { shareId } = useParams<{ shareId: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const navigate = useNavigate();
+  const isAuth = useAuthStore((state) => state.isAuthenticated);
+
   useEffect(() => {
     const fetchFile = async () => {
       try {
+        if (!isAuth) {
+          if (shareId) {
+            localStorage.setItem("redirect", shareId);
+          }
+          navigate("/login");
+          return;
+        }
         const response = await apiClient.get(`/view-file/${shareId}`);
         if (response.data && response.data.signedUrl) {
           console.log(response.data, "response.data");

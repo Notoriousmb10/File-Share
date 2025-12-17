@@ -6,12 +6,13 @@ import FileUpload from "../components/FileUpload";
 import ShareModal from "../components/ShareModal";
 import { FiFileText, FiImage, FiVideo, FiEye, FiShare2 } from "react-icons/fi";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
   const { files, fetchFiles, isLoading, error } = useFileStore();
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
@@ -20,6 +21,14 @@ const Dashboard: React.FC = () => {
     setSelectedFile(file);
     setShareModalOpen(true);
   };
+
+  useEffect(() => {
+    const redirect = localStorage.getItem("redirect");
+    if (redirect) {
+      navigate(`/view-file/${redirect}`);
+      localStorage.removeItem("redirect");
+    }
+  }, []);
 
   const handleView = async (file: FileItem) => {
     try {
