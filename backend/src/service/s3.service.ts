@@ -24,7 +24,7 @@ export const uploadToS3 = async (
     Body: fileBuffer,
     ContentType: contentType,
   });
-  await s3Client.send(command); //this will upload the file to my private s3 bucket
+  await s3Client.send(command);
 };
 
 export const getSignedUrl = async (key: string): Promise<string> => {
@@ -32,6 +32,5 @@ export const getSignedUrl = async (key: string): Promise<string> => {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: key,
   });
-  // Expire in 15 minutes (900 seconds)
   return await awsGetSignedUrl(s3Client, command, { expiresIn: 900 });
 };

@@ -1,5 +1,5 @@
 import { FileModel, IFile } from "../models/file.model";
-import { ShareLinkModel, IShareLink } from "../models/share.model";
+import { ShareLinkModel } from "../models/share.model";
 import * as s3Service from "./s3.service";
 import { v4 as uuidv4 } from "uuid";
 
@@ -8,7 +8,6 @@ export const uploadFile = async (
   file: Express.Multer.File
 ): Promise<IFile> => {
   const s3Key = `${uuidv4()}-${file.originalname}`;
-
   await s3Service.uploadToS3(file.buffer, s3Key, file.mimetype);
 
   const newFile = new FileModel({
@@ -17,22 +16,32 @@ export const uploadFile = async (
     fileType: file.mimetype,
     fileSize: file.size,
     s3Key,
-    sharedWith: [],
   });
 
   await newFile.save();
-
   return newFile;
 };
 
 export const getUserFiles = async (userId: string): Promise<any[]> => {
   const files = await FileModel.find({
-    $or: [{ ownerId: userId }, { sharedWith: userId }],
+    $or: [{ ownerId: userId }, { "sharedWith.userId": userId }],
   } as any)
     .sort({ uploadedAt: -1 })
     .populate("ownerId", "username email");
 
-  return files.map((file) => ({
+  const validFiles = files.filter((file) => {
+    if ((file.ownerId as any)._id.toString() === userId) return true;
+    const shareInfo = file.sharedWith.find(
+      (s) => s.userId.toString() === userId
+    );
+    if (!shareInfo) return false;
+    if (shareInfo.expiresAt && new Date(shareInfo.expiresAt) < new Date()) {
+      return false;
+    }
+    return true;
+  });
+
+  return validFiles.map((file) => ({
     _id: file._id,
     fileName: file.fileName,
     fileType: file.fileType,
@@ -46,30 +55,38 @@ export const getUserFiles = async (userId: string): Promise<any[]> => {
 export const shareFileWithUsers = async (
   fileId: string,
   ownerId: string,
-  targetUserIds: string[]
+  targetUserIds: string[],
+  expiresAt?: string
 ): Promise<void> => {
   const file = await FileModel.findOne({ _id: fileId, ownerId } as any);
+  if (!file) throw new Error("File not found or you are not the owner");
 
-  if (!file) {
-    throw new Error("File not found or you are not the owner");
-  }
+  const shareObjects = targetUserIds.map((id) => ({
+    userId: id,
+    expiresAt: expiresAt ? new Date(expiresAt) : null,
+  }));
+
   await FileModel.updateOne(
     { _id: fileId },
-    { $addToSet: { sharedWith: { $each: targetUserIds } } }
+    { $pull: { sharedWith: { userId: { $in: targetUserIds } } } }
+  );
+
+  await FileModel.updateOne(
+    { _id: fileId },
+    { $push: { sharedWith: { $each: shareObjects } } }
   );
 };
 
 export const generateShareLink = async (
   fileId: string,
-  ownerId: string
+  ownerId: string,
+  expiresInHours: number = 24
 ): Promise<string> => {
   const file = await FileModel.findOne({ _id: fileId, ownerId } as any);
-  if (!file) {
-    throw new Error("File not found or you are not the owner");
-  }
+  if (!file) throw new Error("File not found or you are not the owner");
 
   const shareId = uuidv4();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
   await ShareLinkModel.create({
     shareId,
@@ -96,23 +113,31 @@ export const getViewLink = async (
       expiresAt: { $gt: new Date() },
     } as any).populate("fileId");
 
-    if (!shareLink || !shareLink.fileId) {
+    if (!shareLink || !shareLink.fileId)
       throw new Error("Invalid or expired share link");
-    }
     file = shareLink.fileId as unknown as IFile;
   } else {
     if (!userId) throw new Error("Unauthorized");
-
     file = await FileModel.findOne({
       _id: identifier,
-      $or: [{ ownerId: userId }, { sharedWith: userId }],
+      $or: [{ ownerId: userId }, { "sharedWith.userId": userId }],
     } as any);
 
-    if (!file) {
-      throw new Error("File not found or access denied");
+    if (!file) throw new Error("File not found or access denied");
+
+    // Check expiration for user share
+    if (file.ownerId.toString() !== userId) {
+      const shareInfo = file.sharedWith.find(
+        (s) => s.userId.toString() === userId
+      );
+      if (
+        !shareInfo ||
+        (shareInfo.expiresAt && new Date(shareInfo.expiresAt) < new Date())
+      ) {
+        throw new Error("Access expired or denied");
+      }
     }
   }
 
-  // Generate S3 Signed URL
   return await s3Service.getSignedUrl(file.s3Key);
 };
