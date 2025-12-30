@@ -18,9 +18,7 @@ app.use(
 app.use(express.json());
 
 connectDB();
-app.get("/", (req, res) => {
-  res.send("File Share API is running");
-});
+
 app.use("/auth", authRoutes);
 app.use("/files", fileRoutes);
 

@@ -81,7 +81,7 @@ export const createShareLink = async (req: AuthRequest, res: Response) => {
     );
 
     const shareUrl = `${
-      process.env.FRONTEND_URL || "http://localhost:5173"
+      process.env.REACT_APP_URL || "http://localhost:5173"
     }/view-file/${shareId}`;
 
     return res.status(200).json({ shareUrl });
